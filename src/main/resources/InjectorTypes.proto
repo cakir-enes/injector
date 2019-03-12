@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package injector.types;
+option java_multiple_files = true;
+option java_outer_classname = "InjectorTypesProto";
+
+message Parameter {
+  string path = 1;
+  ParameterType type = 2;
+  string value = 3;
+
+  enum ParameterType {
+    UNKNOWN = 0;
+    STR = 1;
+    INT = 2;
+    FLOAT = 3;
+    BOOL = 4;
+    ARR = 5;
+    OBJ = 6;
+    ENUM = 7;
+  }
+}
+
+message Request {
+  RequestType type = 1;
+  repeated string args = 2;
+
+  enum RequestType {
+    UNKNOWN = 0;
+    MULTIGET = 1;
+    SET = 2;
+    DISCOVER = 3;
+  }
+}
+
+message Reply {
+  ErrorType error = 1;
+
+  oneof reply {
+    string error_str = 2;
+    ParameterList parameter_list = 3;
+    ModuleInfo module_info = 4;
+  }
+
+  enum ErrorType {
+    NO_ERR = 0;
+    PATH_NOT_FOUND = 1;
+    INVALID_VALUE = 2;
+    UNKNOWN = 3;
+  }
+
+  message ModuleInfo {
+    repeated string param_paths = 1;
+    map<string, string> enum_values = 2;
+  }
+
+  message ParameterList {
+    repeated Parameter value = 1;
+  }
+}
