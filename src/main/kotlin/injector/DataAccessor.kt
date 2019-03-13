@@ -59,12 +59,19 @@ class DataAccessor(address: String, module: String) {
                 is Type.Error -> Either.left(mapError(msg.error))
                 else -> Either.left(DomainError.WrongReturnTypeError("Fetch Module Wrong Return Type!"))
             }
-        }.toEither {
-            when (it) {
-                is TimeoutException -> DomainError.TimeoutError("Fetch Module Info Timeout", it)
-                else -> DomainError.GeneralError("Fetch Module Info General Error", it)
+        }.toEither { mapException(it, "Fetch Module") }
+    }
+
+    fun fetchParameters(paths: List<String>): Either<DomainError, Response.ParameterList> {
+        val req = Request(RequestType.MULTIGET, paths)
+        return Try {
+            val resp = nc.request(module, req.protoMarshal()).get(2, TimeUnit.SECONDS)
+            return when (val msg = Response.protoUnmarshal(resp.data).type) {
+                is Type.ParameterList -> Either.right(msg.parameterList)
+                is Type.Error -> Either.left(mapError(msg.error))
+                else -> Either.left(DomainError.WrongReturnTypeError("Fetch Parameters Wrong Return Type"))
             }
-        }
+        }.toEither { mapException(it, "Fetch Parameters") }
     }
 
     private fun mapError(error: Response.Error): DomainError {
@@ -73,6 +80,13 @@ class DataAccessor(address: String, module: String) {
             ErrorType.PATH_NOT_FOUND -> DomainError.PathNotFoundError(error.msg)
             ErrorType.UNKNOWN -> DomainError.GeneralError(error.msg)
             else -> DomainError.GeneralError("Shouldnt be here")
+        }
+    }
+
+    private fun mapException(ex: Throwable, caller: String): DomainError {
+        return when (ex) {
+            is TimeoutException -> DomainError.TimeoutError("$caller Info Timeout", ex)
+            else -> DomainError.GeneralError("$caller General Error")
         }
     }
 
