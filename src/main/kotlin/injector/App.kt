@@ -4,5 +4,6 @@
 package injector
 
 fun main(args: Array<String>) {
-    println("")
+    val dc = DataAccessor("127.0.0.1:4222", "SNR")
+    dc.fetchModuleInfo().mapLeft { println("Msg: ${it.msg} cause: ${it.cause}") }
 }

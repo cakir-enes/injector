@@ -69,37 +69,49 @@ data class Request(
     }
 }
 
-data class Reply_(
-    val error: injector.types.Reply_.ErrorType = injector.types.Reply_.ErrorType.fromValue(0),
-    val reply: Reply? = null,
+data class Response(
+        val type: Type? = null,
     val unknownFields: Map<Int, pbandk.UnknownField> = emptyMap()
-) : pbandk.Message<Reply_> {
-    sealed class Reply {
-        data class ErrorStr(val errorStr: String = "") : Reply()
-        data class ParameterList(val parameterList: injector.types.Reply_.ParameterList) : Reply()
-        data class ModuleInfo(val moduleInfo: injector.types.Reply_.ModuleInfo) : Reply()
+) : pbandk.Message<Response> {
+    sealed class Type {
+        data class Error(val error: injector.types.Response.Error) : Type()
+        data class ParameterList(val parameterList: injector.types.Response.ParameterList) : Type()
+        data class ModuleInfo(val moduleInfo: injector.types.Response.ModuleInfo) : Type()
     }
 
-    override operator fun plus(other: Reply_?) = protoMergeImpl(other)
+    override operator fun plus(other: Response?) = protoMergeImpl(other)
     override val protoSize by lazy { protoSizeImpl() }
     override fun protoMarshal(m: pbandk.Marshaller) = protoMarshalImpl(m)
-    companion object : pbandk.Message.Companion<Reply_> {
-        override fun protoUnmarshal(u: pbandk.Unmarshaller) = Reply_.protoUnmarshalImpl(u)
+
+    companion object : pbandk.Message.Companion<Response> {
+        override fun protoUnmarshal(u: pbandk.Unmarshaller) = Response.protoUnmarshalImpl(u)
     }
 
-    data class ErrorType(override val value: Int) : pbandk.Message.Enum {
-        companion object : pbandk.Message.Enum.Companion<ErrorType> {
-            val NO_ERR = ErrorType(0)
-            val PATH_NOT_FOUND = ErrorType(1)
-            val INVALID_VALUE = ErrorType(2)
-            val UNKNOWN = ErrorType(3)
+    data class Error(
+            val type: injector.types.Response.Error.ErrorType = injector.types.Response.Error.ErrorType.fromValue(0),
+            val msg: String = "",
+            val unknownFields: Map<Int, pbandk.UnknownField> = emptyMap()
+    ) : pbandk.Message<Error> {
+        override operator fun plus(other: Error?) = protoMergeImpl(other)
+        override val protoSize by lazy { protoSizeImpl() }
+        override fun protoMarshal(m: pbandk.Marshaller) = protoMarshalImpl(m)
 
-            override fun fromValue(value: Int) = when (value) {
-                0 -> NO_ERR
-                1 -> PATH_NOT_FOUND
-                2 -> INVALID_VALUE
-                3 -> UNKNOWN
-                else -> ErrorType(value)
+        companion object : pbandk.Message.Companion<Error> {
+            override fun protoUnmarshal(u: pbandk.Unmarshaller) = Error.protoUnmarshalImpl(u)
+        }
+
+        data class ErrorType(override val value: Int) : pbandk.Message.Enum {
+            companion object : pbandk.Message.Enum.Companion<ErrorType> {
+                val UNKNOWN = ErrorType(0)
+                val PATH_NOT_FOUND = ErrorType(1)
+                val INVALID_VALUE = ErrorType(2)
+
+                override fun fromValue(value: Int) = when (value) {
+                    0 -> UNKNOWN
+                    1 -> PATH_NOT_FOUND
+                    2 -> INVALID_VALUE
+                    else -> ErrorType(value)
+                }
             }
         }
     }
@@ -206,87 +218,114 @@ private fun Request.Companion.protoUnmarshalImpl(protoUnmarshal: pbandk.Unmarsha
     }
 }
 
-private fun Reply_.protoMergeImpl(plus: Reply_?): Reply_ = plus?.copy(
-    reply = when {
-        reply is Reply_.Reply.ParameterList && plus.reply is Reply_.Reply.ParameterList ->
-            Reply_.Reply.ParameterList(reply.parameterList + plus.reply.parameterList)
-        reply is Reply_.Reply.ModuleInfo && plus.reply is Reply_.Reply.ModuleInfo ->
-            Reply_.Reply.ModuleInfo(reply.moduleInfo + plus.reply.moduleInfo)
+private fun Response.protoMergeImpl(plus: Response?): Response = plus?.copy(
+        type = when {
+            type is Response.Type.Error && plus.type is Response.Type.Error ->
+                Response.Type.Error(type.error + plus.type.error)
+            type is Response.Type.ParameterList && plus.type is Response.Type.ParameterList ->
+                Response.Type.ParameterList(type.parameterList + plus.type.parameterList)
+            type is Response.Type.ModuleInfo && plus.type is Response.Type.ModuleInfo ->
+                Response.Type.ModuleInfo(type.moduleInfo + plus.type.moduleInfo)
         else ->
-            plus.reply ?: reply
+            plus.type ?: type
     },
     unknownFields = unknownFields + plus.unknownFields
 ) ?: this
 
-private fun Reply_.protoSizeImpl(): Int {
+private fun Response.protoSizeImpl(): Int {
     var protoSize = 0
-    if (error.value != 0) protoSize += pbandk.Sizer.tagSize(1) + pbandk.Sizer.enumSize(error)
-    when (reply) {
-        is Reply_.Reply.ErrorStr -> protoSize += pbandk.Sizer.tagSize(2) + pbandk.Sizer.stringSize(reply.errorStr)
-        is Reply_.Reply.ParameterList -> protoSize += pbandk.Sizer.tagSize(3) + pbandk.Sizer.messageSize(reply.parameterList)
-        is Reply_.Reply.ModuleInfo -> protoSize += pbandk.Sizer.tagSize(4) + pbandk.Sizer.messageSize(reply.moduleInfo)
+    when (type) {
+        is Response.Type.Error -> protoSize += pbandk.Sizer.tagSize(1) + pbandk.Sizer.messageSize(type.error)
+        is Response.Type.ParameterList -> protoSize += pbandk.Sizer.tagSize(2) + pbandk.Sizer.messageSize(type.parameterList)
+        is Response.Type.ModuleInfo -> protoSize += pbandk.Sizer.tagSize(3) + pbandk.Sizer.messageSize(type.moduleInfo)
     }
     protoSize += unknownFields.entries.sumBy { it.value.size() }
     return protoSize
 }
 
-private fun Reply_.protoMarshalImpl(protoMarshal: pbandk.Marshaller) {
-    if (error.value != 0) protoMarshal.writeTag(8).writeEnum(error)
-    if (reply is Reply_.Reply.ErrorStr) protoMarshal.writeTag(18).writeString(reply.errorStr)
-    if (reply is Reply_.Reply.ParameterList) protoMarshal.writeTag(26).writeMessage(reply.parameterList)
-    if (reply is Reply_.Reply.ModuleInfo) protoMarshal.writeTag(34).writeMessage(reply.moduleInfo)
+private fun Response.protoMarshalImpl(protoMarshal: pbandk.Marshaller) {
+    if (type is Response.Type.Error) protoMarshal.writeTag(10).writeMessage(type.error)
+    if (type is Response.Type.ParameterList) protoMarshal.writeTag(18).writeMessage(type.parameterList)
+    if (type is Response.Type.ModuleInfo) protoMarshal.writeTag(26).writeMessage(type.moduleInfo)
     if (unknownFields.isNotEmpty()) protoMarshal.writeUnknownFields(unknownFields)
 }
 
-private fun Reply_.Companion.protoUnmarshalImpl(protoUnmarshal: pbandk.Unmarshaller): Reply_ {
-    var error: injector.types.Reply_.ErrorType = injector.types.Reply_.ErrorType.fromValue(0)
-    var reply: Reply_.Reply? = null
+private fun Response.Companion.protoUnmarshalImpl(protoUnmarshal: pbandk.Unmarshaller): Response {
+    var type: Response.Type? = null
     while (true) when (protoUnmarshal.readTag()) {
-        0 -> return Reply_(error, reply, protoUnmarshal.unknownFields())
-        8 -> error = protoUnmarshal.readEnum(injector.types.Reply_.ErrorType.Companion)
-        18 -> reply = Reply_.Reply.ErrorStr(protoUnmarshal.readString())
-        26 -> reply = Reply_.Reply.ParameterList(protoUnmarshal.readMessage(injector.types.Reply_.ParameterList.Companion))
-        34 -> reply = Reply_.Reply.ModuleInfo(protoUnmarshal.readMessage(injector.types.Reply_.ModuleInfo.Companion))
+        0 -> return Response(type, protoUnmarshal.unknownFields())
+        10 -> type = Response.Type.Error(protoUnmarshal.readMessage(injector.types.Response.Error.Companion))
+        18 -> type = Response.Type.ParameterList(protoUnmarshal.readMessage(injector.types.Response.ParameterList.Companion))
+        26 -> type = Response.Type.ModuleInfo(protoUnmarshal.readMessage(injector.types.Response.ModuleInfo.Companion))
         else -> protoUnmarshal.unknownField()
     }
 }
 
-private fun Reply_.ModuleInfo.protoMergeImpl(plus: Reply_.ModuleInfo?): Reply_.ModuleInfo = plus?.copy(
+private fun Response.Error.protoMergeImpl(plus: Response.Error?): Response.Error = plus?.copy(
+        unknownFields = unknownFields + plus.unknownFields
+) ?: this
+
+private fun Response.Error.protoSizeImpl(): Int {
+    var protoSize = 0
+    if (type.value != 0) protoSize += pbandk.Sizer.tagSize(1) + pbandk.Sizer.enumSize(type)
+    if (msg.isNotEmpty()) protoSize += pbandk.Sizer.tagSize(2) + pbandk.Sizer.stringSize(msg)
+    protoSize += unknownFields.entries.sumBy { it.value.size() }
+    return protoSize
+}
+
+private fun Response.Error.protoMarshalImpl(protoMarshal: pbandk.Marshaller) {
+    if (type.value != 0) protoMarshal.writeTag(8).writeEnum(type)
+    if (msg.isNotEmpty()) protoMarshal.writeTag(18).writeString(msg)
+    if (unknownFields.isNotEmpty()) protoMarshal.writeUnknownFields(unknownFields)
+}
+
+private fun Response.Error.Companion.protoUnmarshalImpl(protoUnmarshal: pbandk.Unmarshaller): Response.Error {
+    var type: injector.types.Response.Error.ErrorType = injector.types.Response.Error.ErrorType.fromValue(0)
+    var msg = ""
+    while (true) when (protoUnmarshal.readTag()) {
+        0 -> return Response.Error(type, msg, protoUnmarshal.unknownFields())
+        8 -> type = protoUnmarshal.readEnum(injector.types.Response.Error.ErrorType.Companion)
+        18 -> msg = protoUnmarshal.readString()
+        else -> protoUnmarshal.unknownField()
+    }
+}
+
+private fun Response.ModuleInfo.protoMergeImpl(plus: Response.ModuleInfo?): Response.ModuleInfo = plus?.copy(
     paramPaths = paramPaths + plus.paramPaths,
     enumValues = enumValues + plus.enumValues,
     unknownFields = unknownFields + plus.unknownFields
 ) ?: this
 
-private fun Reply_.ModuleInfo.protoSizeImpl(): Int {
+private fun Response.ModuleInfo.protoSizeImpl(): Int {
     var protoSize = 0
     if (paramPaths.isNotEmpty()) protoSize += (pbandk.Sizer.tagSize(1) * paramPaths.size) + paramPaths.sumBy(pbandk.Sizer::stringSize)
-    if (enumValues.isNotEmpty()) protoSize += pbandk.Sizer.mapSize(2, enumValues, injector.types.Reply_.ModuleInfo::EnumValuesEntry)
+    if (enumValues.isNotEmpty()) protoSize += pbandk.Sizer.mapSize(2, enumValues, injector.types.Response.ModuleInfo::EnumValuesEntry)
     protoSize += unknownFields.entries.sumBy { it.value.size() }
     return protoSize
 }
 
-private fun Reply_.ModuleInfo.protoMarshalImpl(protoMarshal: pbandk.Marshaller) {
+private fun Response.ModuleInfo.protoMarshalImpl(protoMarshal: pbandk.Marshaller) {
     if (paramPaths.isNotEmpty()) paramPaths.forEach { protoMarshal.writeTag(10).writeString(it) }
-    if (enumValues.isNotEmpty()) protoMarshal.writeMap(18, enumValues, injector.types.Reply_.ModuleInfo::EnumValuesEntry)
+    if (enumValues.isNotEmpty()) protoMarshal.writeMap(18, enumValues, injector.types.Response.ModuleInfo::EnumValuesEntry)
     if (unknownFields.isNotEmpty()) protoMarshal.writeUnknownFields(unknownFields)
 }
 
-private fun Reply_.ModuleInfo.Companion.protoUnmarshalImpl(protoUnmarshal: pbandk.Unmarshaller): Reply_.ModuleInfo {
+private fun Response.ModuleInfo.Companion.protoUnmarshalImpl(protoUnmarshal: pbandk.Unmarshaller): Response.ModuleInfo {
     var paramPaths: pbandk.ListWithSize.Builder<String>? = null
     var enumValues: pbandk.MessageMap.Builder<String, String>? = null
     while (true) when (protoUnmarshal.readTag()) {
-        0 -> return Reply_.ModuleInfo(pbandk.ListWithSize.Builder.fixed(paramPaths), pbandk.MessageMap.Builder.fixed(enumValues), protoUnmarshal.unknownFields())
+        0 -> return Response.ModuleInfo(pbandk.ListWithSize.Builder.fixed(paramPaths), pbandk.MessageMap.Builder.fixed(enumValues), protoUnmarshal.unknownFields())
         10 -> paramPaths = protoUnmarshal.readRepeated(paramPaths, protoUnmarshal::readString, true)
-        18 -> enumValues = protoUnmarshal.readMap(enumValues, injector.types.Reply_.ModuleInfo.EnumValuesEntry.Companion, true)
+        18 -> enumValues = protoUnmarshal.readMap(enumValues, injector.types.Response.ModuleInfo.EnumValuesEntry.Companion, true)
         else -> protoUnmarshal.unknownField()
     }
 }
 
-private fun Reply_.ModuleInfo.EnumValuesEntry.protoMergeImpl(plus: Reply_.ModuleInfo.EnumValuesEntry?): Reply_.ModuleInfo.EnumValuesEntry = plus?.copy(
+private fun Response.ModuleInfo.EnumValuesEntry.protoMergeImpl(plus: Response.ModuleInfo.EnumValuesEntry?): Response.ModuleInfo.EnumValuesEntry = plus?.copy(
     unknownFields = unknownFields + plus.unknownFields
 ) ?: this
 
-private fun Reply_.ModuleInfo.EnumValuesEntry.protoSizeImpl(): Int {
+private fun Response.ModuleInfo.EnumValuesEntry.protoSizeImpl(): Int {
     var protoSize = 0
     if (key.isNotEmpty()) protoSize += pbandk.Sizer.tagSize(1) + pbandk.Sizer.stringSize(key)
     if (value.isNotEmpty()) protoSize += pbandk.Sizer.tagSize(2) + pbandk.Sizer.stringSize(value)
@@ -294,44 +333,44 @@ private fun Reply_.ModuleInfo.EnumValuesEntry.protoSizeImpl(): Int {
     return protoSize
 }
 
-private fun Reply_.ModuleInfo.EnumValuesEntry.protoMarshalImpl(protoMarshal: pbandk.Marshaller) {
+private fun Response.ModuleInfo.EnumValuesEntry.protoMarshalImpl(protoMarshal: pbandk.Marshaller) {
     if (key.isNotEmpty()) protoMarshal.writeTag(10).writeString(key)
     if (value.isNotEmpty()) protoMarshal.writeTag(18).writeString(value)
     if (unknownFields.isNotEmpty()) protoMarshal.writeUnknownFields(unknownFields)
 }
 
-private fun Reply_.ModuleInfo.EnumValuesEntry.Companion.protoUnmarshalImpl(protoUnmarshal: pbandk.Unmarshaller): Reply_.ModuleInfo.EnumValuesEntry {
+private fun Response.ModuleInfo.EnumValuesEntry.Companion.protoUnmarshalImpl(protoUnmarshal: pbandk.Unmarshaller): Response.ModuleInfo.EnumValuesEntry {
     var key = ""
     var value = ""
     while (true) when (protoUnmarshal.readTag()) {
-        0 -> return Reply_.ModuleInfo.EnumValuesEntry(key, value, protoUnmarshal.unknownFields())
+        0 -> return Response.ModuleInfo.EnumValuesEntry(key, value, protoUnmarshal.unknownFields())
         10 -> key = protoUnmarshal.readString()
         18 -> value = protoUnmarshal.readString()
         else -> protoUnmarshal.unknownField()
     }
 }
 
-private fun Reply_.ParameterList.protoMergeImpl(plus: Reply_.ParameterList?): Reply_.ParameterList = plus?.copy(
+private fun Response.ParameterList.protoMergeImpl(plus: Response.ParameterList?): Response.ParameterList = plus?.copy(
     value = value + plus.value,
     unknownFields = unknownFields + plus.unknownFields
 ) ?: this
 
-private fun Reply_.ParameterList.protoSizeImpl(): Int {
+private fun Response.ParameterList.protoSizeImpl(): Int {
     var protoSize = 0
     if (value.isNotEmpty()) protoSize += (pbandk.Sizer.tagSize(1) * value.size) + value.sumBy(pbandk.Sizer::messageSize)
     protoSize += unknownFields.entries.sumBy { it.value.size() }
     return protoSize
 }
 
-private fun Reply_.ParameterList.protoMarshalImpl(protoMarshal: pbandk.Marshaller) {
+private fun Response.ParameterList.protoMarshalImpl(protoMarshal: pbandk.Marshaller) {
     if (value.isNotEmpty()) value.forEach { protoMarshal.writeTag(10).writeMessage(it) }
     if (unknownFields.isNotEmpty()) protoMarshal.writeUnknownFields(unknownFields)
 }
 
-private fun Reply_.ParameterList.Companion.protoUnmarshalImpl(protoUnmarshal: pbandk.Unmarshaller): Reply_.ParameterList {
+private fun Response.ParameterList.Companion.protoUnmarshalImpl(protoUnmarshal: pbandk.Unmarshaller): Response.ParameterList {
     var value: pbandk.ListWithSize.Builder<injector.types.Parameter>? = null
     while (true) when (protoUnmarshal.readTag()) {
-        0 -> return Reply_.ParameterList(pbandk.ListWithSize.Builder.fixed(value), protoUnmarshal.unknownFields())
+        0 -> return Response.ParameterList(pbandk.ListWithSize.Builder.fixed(value), protoUnmarshal.unknownFields())
         10 -> value = protoUnmarshal.readRepeatedMessage(value, injector.types.Parameter.Companion, true)
         else -> protoUnmarshal.unknownField()
     }

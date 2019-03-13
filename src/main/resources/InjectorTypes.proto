@@ -33,20 +33,22 @@ message Request {
   }
 }
 
-message Reply {
-  ErrorType error = 1;
-
-  oneof reply {
-    string error_str = 2;
-    ParameterList parameter_list = 3;
-    ModuleInfo module_info = 4;
+message Response {
+  oneof type {
+    Error error = 1;
+    ParameterList parameter_list = 2;
+    ModuleInfo module_info = 3;
   }
 
-  enum ErrorType {
-    NO_ERR = 0;
-    PATH_NOT_FOUND = 1;
-    INVALID_VALUE = 2;
-    UNKNOWN = 3;
+  message Error {
+    ErrorType type = 1;
+    string msg = 2;
+
+    enum ErrorType {
+        UNKNOWN = 0;
+        PATH_NOT_FOUND = 1;
+        INVALID_VALUE = 2;
+      }
   }
 
   message ModuleInfo {
