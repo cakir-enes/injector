@@ -12,7 +12,6 @@ import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
-
 sealed class DomainError(val msg: String, val cause: Throwable = Throwable()) {
     class GeneralError(msg: String, cause: Throwable = Throwable()) : DomainError(msg, cause)
     class TimeoutError(msg: String, cause: Throwable) : DomainError(msg, cause)
@@ -59,7 +58,9 @@ class DataAccessor(address: String, module: String) {
                 is Type.Error -> Either.left(mapError(msg.error))
                 else -> Either.left(DomainError.WrongReturnTypeError("Fetch Module Wrong Return Type!"))
             }
-        }.toEither { mapException(it, "Fetch Module") }
+        }.toEither {
+            mapException(it, "Fetch Module")
+        }
     }
 
     fun fetchParameters(paths: List<String>): Either<DomainError, Response.ParameterList> {
@@ -71,8 +72,25 @@ class DataAccessor(address: String, module: String) {
                 is Type.Error -> Either.left(mapError(msg.error))
                 else -> Either.left(DomainError.WrongReturnTypeError("Fetch Parameters Wrong Return Type"))
             }
-        }.toEither { mapException(it, "Fetch Parameters") }
+        }.toEither {
+            mapException(it, "Fetch Parameters")
+        }
     }
+
+//    private fun<T : Type> findReturnValue(reqType: RequestType, respType: T): Either<DomainError, T> {
+//        val req = Request(reqType)
+//
+//        return Try {
+//            val resp = nc.request(module, req.protoMarshal()).get(2, TimeUnit.SECONDS)
+//            return when (val msg = Response.protoUnmarshal(resp.data).type) {
+//                is Type.ModuleInfo -> Either.right(msg.moduleInfo)
+//                is Type.Error -> Either.left(mapError(msg.error))
+//                else -> Either.left(DomainError.WrongReturnTypeError("Fetch Module Wrong Return Type!"))
+//            }
+//        }.toEither { mapException(it, "Fetch Module") }
+//
+//
+//    }
 
     private fun mapError(error: Response.Error): DomainError {
         return when (error.type) {
