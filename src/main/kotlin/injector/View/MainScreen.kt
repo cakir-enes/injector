@@ -29,12 +29,11 @@ class MainView : View("Main") {
     override val root = borderpane {
         center = monitoringView.root
         left = vbox {
-            prefWidth = 55.0
-            prefHeight = 15.0
-            button("SWITCH") {
-                action {
-
-                }
+            button("Selection").setOnAction {
+                center.replaceWith(find(SelectionScreen::class).root)
+            }
+            button("Monitoring").setOnAction {
+                center.replaceWith(find(MonitoringView::class).root)
             }
         }
         bottom = statusBar.root

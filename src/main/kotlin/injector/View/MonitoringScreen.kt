@@ -4,37 +4,22 @@ import injector.types.Parameter.ParameterType.Companion.INT
 import injector.types.Parameter.ParameterType.Companion.STR
 import javafx.scene.layout.Priority
 import tornadofx.*
-import java.util.*
-import kotlin.concurrent.fixedRateTimer
 
 class MonitoringView : View("Params") {
-
+    val controller: Store by inject()
     val parameters = mutableListOf<UIParameter>().observable()
-    lateinit var timer: Timer
 
     init {
         subscribe<ParamListEvent> {
             parameters.setAll(it.params)
-            if (::timer.isInitialized) timer.cancel()
-            timer = fixedRateTimer("Refresher", false, 0L, 1000 / 10) { fire(RefreshParams) }
+            fire(RefreshParams)
         }
     }
 
     override val root = vbox {
-
-        button("Fetch") {
-            action {
-                fire(ParamListRequest)
-            }
+        button("SET").setOnAction {
+            controller.state.set(!controller.state.get())
         }
-
-        button("Stop") {
-            action {
-                println("Canceling")
-                timer.cancel()
-            }
-        }
-
         tableview<UIParameter> {
             column("Path", UIParameter::pathProperty)
             column("Value", UIParameter::valueProperty).remainingWidth()
@@ -47,7 +32,7 @@ class MonitoringView : View("Params") {
                                 INT, STR -> {
                                     val field = textfield()
                                     togglebutton("[U]") {
-                                        isSelected = false
+                                        selectedProperty().bind(controller.state)
                                         action {
                                             text = if (isSelected) "[I]" else "[U]"
                                             if (isSelected)
@@ -68,8 +53,14 @@ class MonitoringView : View("Params") {
     }
 
     override fun onUndock() {
-        println("UNDOCKING")
-        timer.cancel()
+        println("CANCELING TIMER")
+        fire(StopRefresh)
     }
+
+    override fun onDock() {
+        fire(ParamListRequest)
+    }
+
+
 
 }

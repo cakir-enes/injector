@@ -3,7 +3,12 @@
  */
 package injector
 
+import injector.View.EventApp
+import tornadofx.launch
+
+
 fun main(args: Array<String>) {
-    val dc = DataAccessor("127.0.0.1:4222", "SNR")
-    dc.fetchModuleInfo().mapLeft { println("Msg: ${it.msg} cause: ${it.cause}") }
+//    val dc = DataAccessor("127.0.0.1:4222", "SNR")
+//    dc.fetchModuleInfo().mapLeft { println("${it.msg}") }.map { println(it.paramPaths) }
+    launch<EventApp>(args)
 }
