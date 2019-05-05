@@ -2,8 +2,13 @@ package injector.View
 
 import injector.types.Parameter.ParameterType.Companion.INT
 import injector.types.Parameter.ParameterType.Companion.STR
+import javafx.beans.property.SimpleBooleanProperty
+import javafx.geometry.Pos
 import javafx.scene.layout.Priority
+import org.controlsfx.glyphfont.FontAwesome
 import tornadofx.*
+import tornadofx.controlsfx.toggleswitch
+import java.awt.Color
 
 class MonitoringView : View("Params") {
     val controller: Store by inject()
@@ -17,34 +22,38 @@ class MonitoringView : View("Params") {
     }
 
     override val root = vbox {
-        button("SET").setOnAction {
-            controller.state.set(!controller.state.get())
-        }
+
         tableview<UIParameter> {
+
             column("Path", UIParameter::pathProperty)
-            column("Value", UIParameter::valueProperty).remainingWidth()
-            column("Action", UIParameter::pathProperty)
-                    .contentWidth(padding = 60.0)
-                    .cellFormat {
-                        graphic = hbox(spacing = 5) {
+                    .minWidth(120.0)
+                    .style { borderColor += box(c("#282828")) }
+            column("Value", UIParameter::valueProperty)
+                    .remainingWidth()
+                    .style { borderColor += box(c("#132433")) }
+            column("Inject", UIParameter::pathProperty) {
+                    contentWidth(60.0)
+                    cellFormat {
+                        graphic = hbox(spacing = 5, alignment = Pos.CENTER) {
                             val param = this@tableview.items[this@cellFormat.index]
+                            val selectedProp = SimpleBooleanProperty(false)
                             when (param.typeEnum) {
                                 INT, STR -> {
                                     val field = textfield()
-                                    togglebutton("[U]") {
-                                        selectedProperty().bind(controller.state)
-                                        action {
-                                            text = if (isSelected) "[I]" else "[U]"
-                                            if (isSelected)
-                                                fire(InjectParameter(param.path, field.text))
-                                            else
-                                                fire(UninjectParameter(param.path))
+                                    toggleswitch("", selectedProp) {
+                                        selectedProp.addListener { _, _, new ->
+                                            if (new) fire(InjectParameter(param.path, field.text))
+                                            else fire(UninjectParameter(param.path))
                                         }
                                     }
                                 }
                             }
                         }
+                        style {
+                            borderColor += box(c("#282828"))
+                        }
                     }
+            }
             columnResizePolicy = SmartResize.POLICY
             vgrow = Priority.ALWAYS
             hgrow = Priority.ALWAYS
@@ -60,7 +69,6 @@ class MonitoringView : View("Params") {
     override fun onDock() {
         fire(ParamListRequest)
     }
-
 
 
 }

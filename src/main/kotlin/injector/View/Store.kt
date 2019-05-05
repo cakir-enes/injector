@@ -45,7 +45,6 @@ class Store : Controller() {
 
         subscribe<RefreshParams> {
             last = System.nanoTime()
-//            parameters.forEach { it.valueProperty.set(Random().nextInt(1500).toString()) }
             refresh = true
             println("Refreshed -- ${TimeUnit.MILLISECONDS.convert(System.nanoTime() - last, TimeUnit.NANOSECONDS)} passed--")
         }
@@ -65,7 +64,6 @@ class Store : Controller() {
             println("Stop Refresh")
             refresh = false
         }
-
     }
 }
 

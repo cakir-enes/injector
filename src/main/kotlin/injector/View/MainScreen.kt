@@ -3,6 +3,7 @@ package injector.View
 import javafx.beans.property.SimpleStringProperty
 import javafx.scene.text.TextAlignment
 import javafx.stage.Stage
+import jfxtras.styles.jmetro8.JMetro
 import tornadofx.*
 
 
@@ -16,9 +17,10 @@ class EventApp : App(MainView::class) {
     }
 
     override fun start(stage: Stage) {
-        reloadViewsOnFocus()
-        reloadStylesheetsOnFocus()
+//        reloadViewsOnFocus()
+//        reloadStylesheetsOnFocus()
         super.start(stage)
+        JMetro(JMetro.Style.LIGHT).applyTheme(stage.scene)
     }
 }
 
@@ -37,8 +39,8 @@ class MainView : View("Main") {
             }
         }
         bottom = statusBar.root
-        prefHeight = 600.0
-        prefWidth = 800.0
+        prefHeight = 768.0
+        prefWidth = 1024.0
     }
 }
 
