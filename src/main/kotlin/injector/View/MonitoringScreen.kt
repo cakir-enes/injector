@@ -1,63 +1,83 @@
 package injector.View
 
+import injector.View.Styles.Companion.green
+import injector.View.Styles.Companion.red
+import injector.types.Parameter
 import injector.types.Parameter.ParameterType.Companion.INT
 import injector.types.Parameter.ParameterType.Companion.STR
+import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleBooleanProperty
+import javafx.geometry.Insets
 import javafx.geometry.Pos
+import javafx.scene.Parent
+import javafx.scene.layout.Background
+import javafx.scene.layout.BackgroundFill
+import javafx.scene.layout.CornerRadii
 import javafx.scene.layout.Priority
+import javafx.scene.paint.Color
 import org.controlsfx.glyphfont.FontAwesome
 import tornadofx.*
 import tornadofx.controlsfx.toggleswitch
-import java.awt.Color
+import java.util.concurrent.Callable
 
-class MonitoringView : View("Params") {
-    val controller: Store by inject()
-    val parameters = mutableListOf<UIParameter>().observable()
+class Styles : Stylesheet() {
+    companion object {
+        val red by cssclass()
+        val green by cssclass()
+    }
 
     init {
-        subscribe<ParamListEvent> {
-            parameters.setAll(it.params)
-            fire(RefreshParams)
+        red { backgroundColor += c("#282828") }
+        green { backgroundColor += c("#aaaaaa") }
+    }
+}
+
+class MonitoringView : View("Params") {
+    val store: Store by inject()
+    //    val parameters = (0..50).map { UIParameter("A.B.$it" , "a", Parameter.ParameterType.INT) }.observable()
+    val parameters = store.selectedParameters
+
+    init {
+        shortcut("return"){
+            val item = root.selectedItem
+            if (item != null) {
+
+            }
         }
     }
 
-    override val root = vbox {
-
-        tableview<UIParameter> {
-
-            column("Path", UIParameter::pathProperty)
-                    .minWidth(120.0)
-                    .style { borderColor += box(c("#282828")) }
-            column("Value", UIParameter::valueProperty)
-                    .remainingWidth()
-                    .style { borderColor += box(c("#132433")) }
-            column("Inject", UIParameter::pathProperty) {
-                    contentWidth(60.0)
-                    cellFormat {
-                        graphic = hbox(spacing = 5, alignment = Pos.CENTER) {
-                            val param = this@tableview.items[this@cellFormat.index]
-                            val selectedProp = SimpleBooleanProperty(false)
-                            when (param.typeEnum) {
-                                INT, STR -> {
-                                    val field = textfield()
-                                    toggleswitch("", selectedProp) {
-                                        selectedProp.addListener { _, _, new ->
-                                            if (new) fire(InjectParameter(param.path, field.text))
-                                            else fire(UninjectParameter(param.path))
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        style {
-                            borderColor += box(c("#282828"))
-                        }
+    override val root = listview(parameters) {
+        cellFormat {
+            graphic = cache {
+                borderpane {
+                    left = label(it.path)
+                    right = label {
+                        textProperty().bind(it.valueProperty)
                     }
+
+
+                }
             }
-            columnResizePolicy = SmartResize.POLICY
-            vgrow = Priority.ALWAYS
-            hgrow = Priority.ALWAYS
-            items.bind(parameters) { it }
+
+            backgroundProperty().bind(
+                    Bindings.createObjectBinding(Callable {
+                        Background(BackgroundFill(
+                                if (it.isInjected) Color.INDIANRED
+                                else if (selectedItem == it) Color.CADETBLUE
+                                else Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY))
+                    }, it.isInjectedProperty))
+
+            style {
+                borderColor += box(c("#282828"))
+            }
+
+        }
+        onDoubleClick {
+            val item = selectionModel.selectedItem
+            if (item != null) {
+                item.isInjectedProperty.set(!item.isInjected)
+                println("$item ${item.isInjected}")
+            }
         }
     }
 
@@ -65,10 +85,5 @@ class MonitoringView : View("Params") {
         println("CANCELING TIMER")
         fire(StopRefresh)
     }
-
-    override fun onDock() {
-        fire(ParamListRequest)
-    }
-
 
 }

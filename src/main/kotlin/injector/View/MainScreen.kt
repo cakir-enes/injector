@@ -1,15 +1,11 @@
 package injector.View
 
 import javafx.beans.property.SimpleStringProperty
+import javafx.geometry.Pos
 import javafx.scene.text.TextAlignment
 import javafx.stage.Stage
 import jfxtras.styles.jmetro8.JMetro
 import tornadofx.*
-
-
-fun main() {
-    launch<EventApp>()
-}
 
 class EventApp : App(MainView::class) {
     init {
@@ -17,8 +13,6 @@ class EventApp : App(MainView::class) {
     }
 
     override fun start(stage: Stage) {
-//        reloadViewsOnFocus()
-//        reloadStylesheetsOnFocus()
         super.start(stage)
         JMetro(JMetro.Style.LIGHT).applyTheme(stage.scene)
     }
@@ -30,12 +24,19 @@ class MainView : View("Main") {
 
     override val root = borderpane {
         center = monitoringView.root
-        left = vbox {
-            button("Selection").setOnAction {
-                center.replaceWith(find(SelectionScreen::class).root)
+        top = hbox(5, Pos.CENTER) {
+            button("Selection (F7)") {
+                action {
+                    center.replaceWith(find(SelectionScreen::class).root)
+                }
+                shortcut("F7")
             }
-            button("Monitoring").setOnAction {
-                center.replaceWith(find(MonitoringView::class).root)
+            button("Monitoring (F8)") {
+                action {
+                    center.replaceWith(find(MonitoringView::class).root)
+                    fire(SelectionsChanged)
+                }
+                shortcut("F8")
             }
         }
         bottom = statusBar.root
