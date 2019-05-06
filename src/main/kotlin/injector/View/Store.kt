@@ -24,11 +24,14 @@ class Store : Controller() {
     val tree by lazy { Tree().also { tree -> parameters.keys.forEach { tree.insert(it) } } }
     val selectedParameters = observableList<UIParameter>()
     var last = 0L
+    val enumValuesMap = hashMapOf<String, List<String>>()
     private var refresh: Boolean = false
 
     init {
         runAsync {
-            (0..50).map { "A.B.$it" to UIParameter("A.B.$it", "a", Parameter.ParameterType.INT) }.forEach { parameters[it.first] = it.second }
+            (0..5).map { "A.B.$it" to UIParameter("A.B.$it", "a", Parameter.ParameterType.INT) }.forEach { parameters[it.first] = it.second }
+            parameters["A.B.enumTest"] = UIParameter("A.B.enumTest", "AAA", Parameter.ParameterType.ENUM)
+            enumValuesMap["A.B.enumTest"] = listOf("AAA", "BBB", "CCC")
             fixedRateTimer("aa", false, 500, 1000 / 10) {
                 runLater {
                     selectedParameters.filter {
@@ -55,8 +58,10 @@ class Store : Controller() {
 
         subscribe<InjectParameter> { evt ->
             val param = parameters[evt.path]
-            param?.valueProperty?.set(evt.value)
-            param?.isInjectedProperty?.set(true)
+            runLater {
+                param?.valueProperty?.set(evt.value)
+                param?.isInjectedProperty?.set(true)
+            }
             injections += evt.path to evt.value
             fire(UpdateLog("INJECTED ${evt.path} => ${evt.value}"))
         }
@@ -98,6 +103,3 @@ class UIParameter(path: String, value: String, type: Parameter.ParameterType) {
         return "$path: $value"
     }
 }
-
-
-fun Parameter.toUIParameter() = UIParameter(this.path, this.value, this.type)
