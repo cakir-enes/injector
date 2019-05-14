@@ -1,0 +1,81 @@
+syntax = "proto3";
+package io.grpc.injector;
+
+
+option java_multiple_files = true;
+option java_package = "io.grpc.injector";
+option java_outer_classname = "InjectorProto";
+
+import "google/protobuf/empty.proto";
+
+
+message MultiInjectReq {
+    repeated PathAndValue pairs = 1;
+}
+
+message MultiInjectResp {
+    repeated Status statuses = 1;
+}
+
+message MultiGetReq {
+    repeated string paramPaths = 1;
+}
+
+
+message MultiGetResp {
+    repeated PathAndValue pairs = 1;
+}
+
+message ParameterInfoResp {
+    repeated Parameter paramInfos = 1;  
+}
+
+message EnumValuesResp {
+    message Values {
+        repeated string values = 1;
+    }
+    map<string, Values> values = 1;
+}
+
+
+message Parameter {
+    string path = 1;
+    Type type = 2;
+    string value = 3;
+  
+    enum Type {
+      UNKNOWN = 0;
+      STR = 1;
+      INT = 2;
+      FLOAT = 3;
+      BOOL = 4;
+      ARR = 5;
+      ENUM = 6;
+    }
+}
+
+message Status {
+    string path = 1;
+    string detail = 2;
+    Type type = 3;
+
+    enum Type {
+        Unknown = 0;
+        Success = 1;
+        InvalidPath = 2;
+        InvalidValue = 3;
+    }
+}
+
+message PathAndValue {
+    string path = 1;
+    string value = 2;
+}
+
+
+service Injector {
+    rpc MultiInject (MultiInjectReq) returns (MultiInjectResp) {}
+    rpc MultiGet (MultiGetReq) returns (stream MultiGetResp) {}
+    rpc GetParameterInfos (google.protobuf.Empty) returns (ParameterInfoResp) {}
+    rpc GetEnumValues (google.protobuf.Empty) returns (EnumValuesResp) {}
+}
