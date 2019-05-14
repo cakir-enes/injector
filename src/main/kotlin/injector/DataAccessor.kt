@@ -1,3 +1,4 @@
+/*
 package injector
 
 import arrow.core.Either
@@ -108,4 +109,4 @@ class DataAccessor(address: String, module: String) {
         }
     }
 
-}
+}*/

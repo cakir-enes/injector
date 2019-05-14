@@ -4,6 +4,7 @@
 package injector
 
 import injector.View.EventApp
+import io.grpc.examples.helloworld.HelloReply
 import tornadofx.launch
 
 
@@ -12,4 +13,5 @@ fun main(args: Array<String>) {
 //    dc.fetchModuleInfo().mapLeft { println("${it.msg}") }.map { println(it.paramPaths) }
 
     launch<EventApp>(args)
+
 }
