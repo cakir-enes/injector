@@ -1,36 +1,15 @@
 package injector.View
 
-import injector.View.Styles.Companion.green
-import injector.View.Styles.Companion.red
-import injector.types.Parameter
-import injector.types.Parameter.ParameterType.Companion.INT
-import injector.types.Parameter.ParameterType.Companion.STR
+import injector.model.StopRefresh
+import injector.model.Store
 import javafx.beans.binding.Bindings
-import javafx.beans.property.SimpleBooleanProperty
 import javafx.geometry.Insets
-import javafx.geometry.Pos
-import javafx.scene.Parent
 import javafx.scene.layout.Background
 import javafx.scene.layout.BackgroundFill
 import javafx.scene.layout.CornerRadii
-import javafx.scene.layout.Priority
 import javafx.scene.paint.Color
-import org.controlsfx.glyphfont.FontAwesome
 import tornadofx.*
-import tornadofx.controlsfx.toggleswitch
 import java.util.concurrent.Callable
-
-class Styles : Stylesheet() {
-    companion object {
-        val red by cssclass()
-        val green by cssclass()
-    }
-
-    init {
-        red { backgroundColor += c("#282828") }
-        green { backgroundColor += c("#aaaaaa") }
-    }
-}
 
 class MonitoringView : View("Params") {
     val store: Store by inject()
@@ -58,14 +37,16 @@ class MonitoringView : View("Params") {
 
                 }
             }
-
             backgroundProperty().bind(
                     Bindings.createObjectBinding(Callable {
                         Background(BackgroundFill(
-                                if (it.isInjected) Color.INDIANRED
-                                else if (selectedItem == it) Color.CADETBLUE
-                                else Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY))
+                                when {
+                                    it.isInjected -> Color.INDIANRED
+                                    selectedItem == it -> Color.CADETBLUE
+                                    else -> Color.DIMGRAY
+                                }, CornerRadii.EMPTY, Insets.EMPTY))
                     }, it.isInjectedProperty))
+
 
             style {
                 borderColor += box(c("#282828"))

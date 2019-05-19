@@ -1,14 +1,13 @@
-package injector.View
+package injector.model
 
-import injector.model.Tree
-import injector.types.Parameter
+import injector.Client
+//import injector.types.Parameter
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
 import tornadofx.*
 import tornadofx.EventBus.RunOn.BackgroundThread
-import java.util.*
+import io.grpc.injector.Parameter
 import java.util.concurrent.TimeUnit
-import kotlin.concurrent.fixedRateTimer
 
 object ParamListRequest : FXEvent(BackgroundThread)
 object RefreshParams : FXEvent(BackgroundThread)
@@ -18,28 +17,22 @@ class UpdateLog(val text: String) : FXEvent()
 class InjectParameter(val path: String, val value: String) : FXEvent(BackgroundThread)
 class UninjectParameter(val path: String) : FXEvent(BackgroundThread)
 
+
+
 class Store : Controller() {
+    val client = Client("localhost:7777")
     private val parameters = mutableMapOf<String, UIParameter>()
     private val injections = hashMapOf<String, String>()
     val tree by lazy { Tree().also { tree -> parameters.keys.forEach { tree.insert(it) } } }
-    val selectedParameters = observableList<UIParameter>()
+    val selectedParameters = observableListOf<UIParameter>()
     var last = 0L
     val enumValuesMap = hashMapOf<String, List<String>>()
     private var refresh: Boolean = false
 
     init {
         runAsync {
-            (0..5).map { "A.B.$it" to UIParameter("A.B.$it", "a", Parameter.ParameterType.INT) }.forEach { parameters[it.first] = it.second }
-            parameters["A.B.enumTest"] = UIParameter("A.B.enumTest", "AAA", Parameter.ParameterType.ENUM)
-            enumValuesMap["A.B.enumTest"] = listOf("AAA", "BBB", "CCC")
-            fixedRateTimer("aa", false, 500, 1000 / 10) {
-                runLater {
-                    selectedParameters.filter {
-                        !injections.containsKey(it.path)
-                    }.forEach {
-                        if (true) it.valueProperty.set(Random().nextInt(1500).toString())
-                    }
-                }
+            client.getParameterInfos().paramInfosList.forEach {
+                parameters[it.path] = UIParameter(it.path, it.value, it.type)
             }
         }
 
@@ -83,9 +76,7 @@ class Store : Controller() {
 }
 
 
-class UIParameter(path: String, value: String, type: Parameter.ParameterType) {
-    val typeEnum: Parameter.ParameterType = type
-
+class UIParameter(path: String, value: String, type: Parameter.Type) {
     val pathProperty = SimpleStringProperty(path)
     var path by pathProperty
 

@@ -1,5 +1,6 @@
 package injector.View
 
+import injector.model.Store
 import injector.model.Tree
 import javafx.beans.binding.Bindings
 import javafx.scene.control.TreeItem
@@ -7,7 +8,7 @@ import javafx.scene.input.KeyCode
 import tornadofx.*
 import java.util.concurrent.Callable
 
-class SelectionScreen : View("Selection") {
+class SelectionView : View("Selection") {
     var tree: Tree by singleAssign()
     val store: Store by inject()
 

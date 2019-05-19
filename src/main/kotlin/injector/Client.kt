@@ -13,7 +13,7 @@ class Client(val address: String) {
     val stub: InjectorGrpc.InjectorBlockingStub
 
     init {
-        channel = ManagedChannelBuilder.forTarget(address).build()
+        channel = ManagedChannelBuilder.forTarget(address).usePlaintext().build()
         stub = InjectorGrpc.newBlockingStub(channel)
     }
 
